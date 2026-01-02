@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## [0.1.0] - 2026-01-02
+
+### Added
 - GitHub Actions CI workflow for testing on multiple OS (Linux, macOS) and Java versions (11, 17, 21, 23)
 - Shell compatibility test script (`test-shell-compatibility.sh`) to verify POSIX compliance across sh, bash, dash, and zsh
 - Minimal example project in `example-project/` demonstrating plugin usage
