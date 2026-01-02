@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Bump minor version and deploy jstall library.
+Bump minor version and deploy execjar library.
 
 This script:
 1. Reads the current version from pom.xml
@@ -28,6 +28,7 @@ class VersionBumper:
         self.readme = project_root / "README.md"
         self.changelog = project_root / "CHANGELOG.md"
         self.jbang_catalog = project_root / "jbang-catalog.json"
+        self.example_pom = project_root / "example-project/pom.xml"
         self.backup_dir = project_root / ".release-backup"
         self.backups_created = False
 
@@ -126,6 +127,23 @@ class VersionBumper:
         else:
             print("⚠ jbang-catalog.json has unexpected structure, skipping update")
 
+    def update_example_project(self, old_version: str, new_version: str):
+        """Update version in example-project/pom.xml"""
+        if not self.example_pom.exists():
+            print(f"⚠ Example project pom.xml not found at {self.example_pom}, skipping")
+            return
+
+        content = self.example_pom.read_text()
+        # Update the execjar-maven-plugin version
+        content = re.sub(
+            r'(<groupId>me\.bechberger</groupId>\s*<artifactId>execjar-maven-plugin</artifactId>\s*<version>)' + re.escape(old_version) + r'(</version>)',
+            r'\g<1>' + new_version + r'\g<2>',
+            content,
+            flags=re.MULTILINE | re.DOTALL
+        )
+        self.example_pom.write_text(content)
+        print(f"✓ Updated example-project/pom.xml: {old_version} -> {new_version}")
+
     def show_version_diff(self, old_version: str, new_version: str):
         """Show what would change in version files"""
         print("\n📝 File changes preview:")
@@ -145,6 +163,11 @@ class VersionBumper:
             print(f"\n  jbang-catalog.json:")
             print(f"    - releases/download/v{old_version}/execjar.jar")
             print(f"    + releases/download/v{new_version}/execjar.jar")
+
+        if self.example_pom.exists():
+            print(f"\n  example-project/pom.xml:")
+            print(f"    - <version>{old_version}</version>")
+            print(f"    + <version>{new_version}</version>")
 
     def show_changelog_diff(self, version: str):
         """Show what would change in CHANGELOG.md"""
@@ -300,7 +323,7 @@ class VersionBumper:
         # Get changelog entry for this specific version (after it's been released in CHANGELOG.md)
         changelog_entry = self.get_version_changelog_entry(version)
         if not changelog_entry:
-            changelog_entry = f"Release {version}\n\nSee [CHANGELOG.md](https://github.com/parttimenerd/jstall/blob/main/CHANGELOG.md) for details."
+            changelog_entry = f"Release {version}\n\nSee [CHANGELOG.md](https://github.com/parttimenerd/execjar/blob/main/CHANGELOG.md) for details."
 
         # Format release notes
         release_notes = f"""# Release {version}
@@ -313,24 +336,24 @@ class VersionBumper:
 ```xml
 <dependency>
     <groupId>me.bechberger</groupId>
-    <artifactId>jstall</artifactId>
+    <artifactId>execjar</artifactId>
     <version>{version}</version>
 </dependency>
 ```
 
 ### Direct Download
 Download from the assets below:
-- `jstall.jar` - Executable JAR file (requires Java 21+)
-- `jstall` - Standalone launcher script (Unix/Linux/macOS)
+- `execjar.jar` - Executable JAR file (requires Java 11+)
+- `execjar` - Standalone launcher script (Unix/Linux/macOS)
 
 **Usage:**
 ```bash
 # Using the script (recommended for Unix-like systems)
-chmod +x jstall
-./jstall <pid>
+chmod +x execjar
+./execjar myapp.jar
 
 # Using the JAR directly
-java -jar jstall.jar <pid>
+java -jar execjar.jar myapp.jar
 ```
 """
 
@@ -340,19 +363,19 @@ java -jar jstall.jar <pid>
 
         try:
             # Build asset paths
-            jar_path = self.project_root / 'target' / 'jstall.jar'
-            script_path = self.project_root / 'target' / 'jstall'
+            jar_path = self.project_root / 'target' / 'execjar.jar'
+            script_path = self.project_root / 'target' / 'execjar'
 
             assets = []
             if jar_path.exists():
-                assets.append(str(jar_path) + '#jstall.jar')
+                assets.append(str(jar_path) + '#execjar.jar')
             else:
                 print(f"⚠ JAR not found at {jar_path}")
 
             if script_path.exists():
-                assets.append(str(script_path) + '#jstall')
+                assets.append(str(script_path) + '#execjar')
             else:
-                print(f"⚠ jstall script not found at {script_path}")
+                print(f"⚠ execjar script not found at {script_path}")
 
             if not assets:
                 print("⚠ No assets found, creating release without assets")
@@ -449,10 +472,24 @@ java -jar jstall.jar <pid>
         return result
 
     def run_tests(self):
-        """Run Maven tests"""
+        """Run comprehensive test suite using run-tests.sh"""
+        test_script = self.project_root / "run-tests.sh"
+
+        if not test_script.exists():
+            print(f"⚠ run-tests.sh not found, falling back to mvn test")
+            self.run_command(
+                ['mvn', 'clean', 'test'],
+                "Running tests"
+            )
+            return
+
+        # Make sure the script is executable
+        import os
+        test_script.chmod(test_script.stat().st_mode | 0o111)
+
         self.run_command(
-            ['mvn', 'clean', 'test'],
-            "Running tests"
+            [str(test_script)],
+            "Running comprehensive test suite (run-tests.sh)"
         )
 
     def build_package(self):
@@ -472,7 +509,7 @@ java -jar jstall.jar <pid>
     def git_commit(self, version: str):
         """Commit version changes"""
         self.run_command(
-            ['git', 'add', 'pom.xml', 'src/main/java/me/bechberger/jstall/Main.java', 'README.md', 'CHANGELOG.md', 'jbang-catalog.json'],
+            ['git', 'add', 'pom.xml', 'src/main/java/me/bechberger/execjar/Main.java', 'README.md', 'CHANGELOG.md', 'jbang-catalog.json', 'example-project/pom.xml'],
             "Staging files"
         )
         self.run_command(
@@ -503,7 +540,7 @@ java -jar jstall.jar <pid>
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Bump version and deploy jstall library',
+        description='Bump version and deploy execjar library',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog='''
 Examples:
@@ -626,7 +663,7 @@ Note: CHANGELOG.md must have content under [Unreleased] section before releasing
             print("  • git push")
             print("  • git push --tags")
         if do_github_release:
-            print(f"  • gh release create v{new_version} (with CHANGELOG entry + jstall.jar)")
+            print(f"  • gh release create v{new_version} (with CHANGELOG entry + execjar.jar)")
 
         print("\n✓ No changes made (dry run)")
         return
@@ -677,6 +714,7 @@ Note: CHANGELOG.md must have content under [Unreleased] section before releasing
         bumper.update_main_java(current_version, new_version)
         bumper.update_readme(current_version, new_version)
         bumper.update_jbang_catalog(new_version)
+        bumper.update_example_project(current_version, new_version)
         bumper.update_changelog(new_version)
 
         # Run tests
@@ -744,19 +782,19 @@ Note: CHANGELOG.md must have content under [Unreleased] section before releasing
     print(f"  ✓ GitHub release created" if do_github_release else "  ⊘ GitHub release skipped")
 
     print(f"\nArtifacts:")
-    print(f"  • target/jstall.jar (executable JAR)")
-    print(f"  • target/jstall (launcher script)")
-    print(f"  • target/jstall-{new_version}.jar")
-    print(f"  • target/jstall-{new_version}-sources.jar")
-    print(f"  • target/jstall-{new_version}-javadoc.jar")
+    print(f"  • target/execjar.jar (executable JAR)")
+    print(f"  • target/execjar (launcher script)")
+    print(f"  • target/execjar-{new_version}.jar")
+    print(f"  • target/execjar-{new_version}-sources.jar")
+    print(f"  • target/execjar-{new_version}-javadoc.jar")
 
     if do_github_release:
         print(f"\n📦 GitHub Release:")
-        print(f"  https://github.com/parttimenerd/jstall/releases/tag/v{new_version}")
+        print(f"  https://github.com/parttimenerd/execjar/releases/tag/v{new_version}")
 
     if do_deploy:
         print(f"\n📦 Maven Central:")
-        print(f"  https://central.sonatype.com/artifact/me.bechberger/jstall/{new_version}")
+        print(f"  https://central.sonatype.com/artifact/me.bechberger/execjar/{new_version}")
 
 
 if __name__ == '__main__':

@@ -21,7 +21,12 @@ The `execjar-maven-plugin` is intended to run in the `package` phase and produce
 
 ### Complete example with maven-assembly-plugin
 
+The following is the relevant part of a `pom.xml` (see [example-project/pom.xml](example-project/pom.xml)) that creates a fat JAR with dependencies:
+
 ```xml
+<groupId>com.example</groupId>
+<artifactId>hello-execjar</artifactId>
+<!-- ... -->
 <build>
   <plugins>
     <!-- Step 1: Create fat JAR with dependencies -->
@@ -34,7 +39,7 @@ The `execjar-maven-plugin` is intended to run in the `package` phase and produce
         </descriptorRefs>
         <archive>
           <manifest>
-            <mainClass>com.example.Main</mainClass>
+            <mainClass>com.example.HelloExecJar</mainClass>
           </manifest>
         </archive>
       </configuration>
@@ -61,14 +66,16 @@ The `execjar-maven-plugin` is intended to run in the `package` phase and produce
           </goals>
         </execution>
       </executions>
-      <configuration>
-        <minJavaVersion>17</minJavaVersion>
-        <maxJavaVersion>21</maxJavaVersion>
-        <jvmOpts>-Xmx1g</jvmOpts>
-      </configuration>
     </plugin>
   </plugins>
 </build>
+```
+
+You can then run the resulting executable (e.g., `target/hello-execjar`) directly:
+
+```bash
+> ./target/hello-execjar
+Hello from Exec Jar!
 ```
 
 ### Configuration options
