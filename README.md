@@ -1,6 +1,6 @@
 # execjar
 
-[![CI](https://github.com/parttimenerd/execjar/actions/workflows/ci.yml/badge.svg)](https://github.com/parttimenerd/execjar/actions/workflows/ci.yml)
+[![CI](https://github.com/parttimenerd/execjar/actions/workflows/ci.yml/badge.svg)](https://github.com/parttimenerd/execjar/actions/workflows/ci.yml) ![Maven Central Version](https://img.shields.io/maven-central/v/me.bechberger/execjar)
 
 Turn your JAR (with dependencies) into a single self-executing file.
 No more `java -jar` — just run it directly on Linux and macOS.
@@ -57,7 +57,7 @@ The following is the relevant part of a `pom.xml` (see [example-project/pom.xml]
     <!-- Step 2: Create executable from fat JAR -->
     <plugin>
       <groupId>me.bechberger</groupId>
-      <artifactId>execjar-maven-plugin</artifactId>
+      <artifactId>execjar</artifactId>
       <version>0.1.0</version>
       <executions>
         <execution>
@@ -120,7 +120,7 @@ For a comprehensive example with Java properties, environment variables, and arg
 ```xml
 <plugin>
   <groupId>me.bechberger</groupId>
-  <artifactId>execjar-maven-plugin</artifactId>
+  <artifactId>execjar</artifactId>
   <version>0.1.0</version>
   <executions>
     <execution>

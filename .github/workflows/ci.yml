@@ -102,11 +102,83 @@ jobs:
       - name: Run shell compatibility tests
         run: ./test-shell-compatibility.sh
 
+  # Example project build and test
+  example-project:
+    name: Build and Test Example Project
+    runs-on: ${{ matrix.os }}
+    needs: test-matrix
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        java-version: [17, 21]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java-version }}
+          distribution: 'sapmachine'
+          cache: maven
+
+      - name: Build example project
+        working-directory: example-project
+        run: mvn clean package
+
+      - name: Verify example executable was created
+        working-directory: example-project
+        run: |
+          if [ -f target/hello-execjar ]; then
+            echo "✓ Executable created successfully"
+            ls -lh target/hello-execjar
+            file target/hello-execjar || echo "(file command not available)"
+          else
+            echo "✗ Executable not found"
+            ls -la target/
+            exit 1
+          fi
+
+      - name: Test example executable
+        working-directory: example-project
+        run: |
+          chmod +x target/hello-execjar
+          
+          echo "Testing executable output:"
+          output=$(./target/hello-execjar)
+          echo "$output"
+          
+          # Verify the expected output
+          if echo "$output" | grep -q "Hello from Exec Jar!"; then
+            echo "✓ Output contains 'Hello from Exec Jar!'"
+          else
+            echo "✗ Expected output 'Hello from Exec Jar!' not found"
+            echo "Actual output: $output"
+            exit 1
+          fi
+          
+          echo ""
+          echo "Testing executable with arguments:"
+          ./target/hello-execjar arg1 "arg with spaces" arg3
+          
+          echo ""
+          echo "Testing with JVM options:"
+          ./target/hello-execjar -Xmx256m -Dtest.property=value
+
+      - name: Upload example executable
+        if: matrix.os == 'ubuntu-latest' && matrix.java-version == 17
+        uses: actions/upload-artifact@v4
+        with:
+          name: example-hello-execjar
+          path: example-project/target/hello-execjar
+          retention-days: 7
+
   # Build artifacts for release
   build-artifacts:
     name: Build Release Artifacts
     runs-on: ubuntu-latest
-    needs: [test-matrix, shell-compatibility]
+    needs: [test-matrix, shell-compatibility, example-project]
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
 
     steps:
