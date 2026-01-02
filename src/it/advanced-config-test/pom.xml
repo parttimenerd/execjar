@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>me.bechberger.it</groupId>
+  <artifactId>advanced-config-test</artifactId>
+  <version>1.0-SNAPSHOT</version>
+
+  <description>Test javaProperties, prependArgs, appendArgs, and environmentVariables with spaces and escaping</description>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>17</maven.compiler.release>
+  </properties>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.6.0</version>
+        <configuration>
+          <descriptorRefs>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
+          <archive>
+            <manifest>
+              <mainClass>me.bechberger.it.AdvancedConfigApp</mainClass>
+            </manifest>
+          </archive>
+        </configuration>
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>@project.groupId@</groupId>
+        <artifactId>@project.artifactId@</artifactId>
+        <version>@project.version@</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>execjar</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <minJavaVersion>17</minJavaVersion>
+          <!-- Test javaProperties with spaces and special characters -->
+          <javaProperties>
+            <app.name>My Application</app.name>
+            <app.version>1.0.0</app.version>
+            <app.path>/path/to/my app/config</app.path>
+            <app.message>Hello World &amp; Friends</app.message>
+            <app.quote>It's working!</app.quote>
+            <app.backslash>C:\Users\Test\file.txt</app.backslash>
+          </javaProperties>
+          <!-- Test environmentVariables with spaces and special characters -->
+          <environmentVariables>
+            <MY_APP_NAME>Advanced Test App</MY_APP_NAME>
+            <MY_APP_PATH>/opt/my app/bin</MY_APP_PATH>
+            <MY_VAR_WITH_SPECIAL>Value &amp; More Text</MY_VAR_WITH_SPECIAL>
+            <MY_VAR_APOSTROPHE>It's working!</MY_VAR_APOSTROPHE>
+          </environmentVariables>
+          <!-- Test prependArgs with spaces and special characters -->
+          <prependArgs>--config "/path/to/my config/file.yml" "--name=Test App"</prependArgs>
+          <!-- Test appendArgs with spaces and special characters -->
+          <appendArgs>--log-level debug "--message=Hello World!"</appendArgs>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

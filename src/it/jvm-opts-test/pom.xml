@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>me.bechberger.it</groupId>
+  <artifactId>jvm-opts-test</artifactId>
+  <version>1.0-SNAPSHOT</version>
+
+  <description>Test JVM options and system properties are properly embedded and applied</description>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>17</maven.compiler.release>
+  </properties>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.6.0</version>
+        <configuration>
+          <descriptorRefs>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
+          <archive>
+            <manifest>
+              <mainClass>me.bechberger.it.JvmOptsApp</mainClass>
+            </manifest>
+          </archive>
+        </configuration>
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>@project.groupId@</groupId>
+        <artifactId>@project.artifactId@</artifactId>
+        <version>@project.version@</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>execjar</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <minJavaVersion>17</minJavaVersion>
+          <jvmOpts>-Xmx256m -Dapp.name=JvmOptsTest -Dapp.version=1.0 -Dapp.title='MyApplication'</jvmOpts>
+          <prependArgs>--mode test --verbose</prependArgs>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

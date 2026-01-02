@@ -1,0 +1,9 @@
+{
+  "catalogs": {},
+  "aliases": {
+    "jstall": {
+      "script-ref": "https://github.com/parttimenerd/execjar/releases/download/v0.3.4/jstall.jar"
+    }
+  },
+  "templates": {}
+}
