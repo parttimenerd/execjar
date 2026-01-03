@@ -72,14 +72,43 @@ get_java_version() {
         return
     fi
 
+    # Try to read version from release file first (much faster than java -version)
+    # The release file is typically at $JAVA_HOME/release or ../release relative to bin/java
+    java_dir=$(dirname "$java_exe")
+    java_home=$(dirname "$java_dir")
+    release_file="$java_home/release"
+
+    if [ -f "$release_file" ]; then
+        debug "Found release file: $release_file"
+
+        # Extract JAVA_VERSION from release file
+        # Format: JAVA_VERSION="17" or JAVA_VERSION="17.0.1"
+        version=$(grep '^JAVA_VERSION=' "$release_file" 2>/dev/null | sed 's/^JAVA_VERSION="//' | sed 's/"$//')
+
+        if [ -n "$version" ]; then
+            debug "Version from release file: $version"
+
+            # Extract major version from JAVA_VERSION
+            major=$(echo "$version" | sed -n 's/^1\.\([0-9]*\).*/\1/p')
+            if [ -n "$major" ]; then
+                # Old format (1.8.0_xxx -> 8)
+                echo "$major"
+                return
+            fi
+
+            # New format (11.0.x -> 11 or just 17 -> 17)
+            major=$(echo "$version" | sed -n 's/^\([0-9]*\).*/\1/p')
+            if [ -n "$major" ]; then
+                echo "$major"
+                return
+            fi
+        fi
+    fi
+
+    # Fallback to java -version (slower)
+    debug "No release file found or could not parse, falling back to java -version"
     version_output=$("$java_exe" -version 2>&1)
 
-    # Check for EA builds
-    if echo "$version_output" | grep -q -- "-ea"; then
-        debug "Rejected $java_exe: EA build detected"
-        echo "0"
-        return
-    fi
 
     # Extract version number
     # Handles both old format (1.8.0_xxx) and new format (11.0.x, 17.0.x, etc.)
@@ -143,7 +172,6 @@ if [ "$STRICT_MODE" = "1" ]; then
         if [ -n "$MAX_JAVA_VERSION" ]; then
             echo "  - Java version <= $MAX_JAVA_VERSION" >&2
         fi
-        echo "  - Non-EA builds only" >&2
         echo "" >&2
         echo "Please ensure a compatible 'java' is in your PATH." >&2
         exit 1
@@ -162,7 +190,6 @@ if [ "$STRICT_MODE" = "1" ]; then
         if [ -n "$MAX_JAVA_VERSION" ]; then
             echo "  - Java version <= $MAX_JAVA_VERSION" >&2
         fi
-        echo "  - Non-EA builds only" >&2
         echo "" >&2
         echo "Please update your PATH to point to a compatible Java installation." >&2
         exit 1
@@ -173,56 +200,56 @@ if [ "$STRICT_MODE" = "1" ]; then
     BEST_VERSION="$PATH_VERSION"
     debug "Strict mode: using java from PATH: $BEST_JAVA (version $BEST_VERSION)"
 else
-    # Normal mode: find best Java across all sources
+    # Normal mode: use first valid Java found (fast path optimization)
     check_java() {
         java_exe="$1"
         source="$2"
 
         if [ ! -x "$java_exe" ]; then
-            return
+            return 1
         fi
 
         version=$(get_java_version "$java_exe")
 
         if is_valid_version "$version"; then
             debug "Found valid Java $version at $java_exe (from $source)"
-            if [ "$version" -gt "$BEST_VERSION" ]; then
-                BEST_JAVA="$java_exe"
-                BEST_VERSION="$version"
-            fi
+            BEST_JAVA="$java_exe"
+            BEST_VERSION="$version"
+            return 0
         else
             debug "Skipping $java_exe (version $version, from $source)"
+            return 1
         fi
     }
 
     # 1. Try JAVA_HOME
-    if [ -n "$JAVA_HOME" ]; then
-        check_java "$JAVA_HOME/bin/java" "JAVA_HOME"
-    fi
-
+    if [ -n "$JAVA_HOME" ] && check_java "$JAVA_HOME/bin/java" "JAVA_HOME"; then
+        : # Found valid Java, will execute below
     # 2. Try PATH
-    if command -v java >/dev/null 2>&1; then
-        check_java "$(command -v java)" "PATH"
-    fi
-
+    elif command -v java >/dev/null 2>&1 && check_java "$(command -v java)" "PATH"; then
+        : # Found valid Java, will execute below
     # 3. Try /etc/alternatives/java
-    check_java "/etc/alternatives/java" "/etc/alternatives"
-
-    # 4. Try common JVM directories
-    if [ "$(uname -s)" = "Darwin" ]; then
-        JVM_DIR="/Library/Java/JavaVirtualMachines"
-        CONTENTS_HOME="/Contents/Home"
+    elif check_java "/etc/alternatives/java" "/etc/alternatives"; then
+        : # Found valid Java, will execute below
     else
-        JVM_DIR="/usr/lib/jvm"
-        CONTENTS_HOME=""
-    fi
+        # 4. Try common JVM directories as last resort
+        if [ "$(uname -s)" = "Darwin" ]; then
+            JVM_DIR="/Library/Java/JavaVirtualMachines"
+            CONTENTS_HOME="/Contents/Home"
+        else
+            JVM_DIR="/usr/lib/jvm"
+            CONTENTS_HOME=""
+        fi
 
-    if [ -d "$JVM_DIR" ]; then
-        for JVM in "$JVM_DIR"/*; do
-            if [ -d "$JVM" ]; then
-                check_java "$JVM$CONTENTS_HOME/bin/java" "common JVM dir"
-            fi
-        done
+        if [ -d "$JVM_DIR" ]; then
+            for JVM in "$JVM_DIR"/*; do
+                if [ -d "$JVM" ]; then
+                    if check_java "$JVM$CONTENTS_HOME/bin/java" "common JVM dir"; then
+                        break
+                    fi
+                fi
+            done
+        fi
     fi
 fi
 
@@ -245,7 +272,6 @@ echo "  - Java version >= $MIN_JAVA_VERSION" >&2
 if [ -n "$MAX_JAVA_VERSION" ]; then
     echo "  - Java version <= $MAX_JAVA_VERSION" >&2
 fi
-echo "  - Non-EA builds only" >&2
 echo "" >&2
 echo "Please install a compatible JDK or set JAVA_HOME to point to one." >&2
 echo "" >&2

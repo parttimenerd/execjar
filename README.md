@@ -306,12 +306,15 @@ The launcher searches for a usable `java` in this order:
    - Linux: `/usr/lib/jvm/*/bin/java`
 
 For each candidate the launcher:
-* Parses `java -version` output to extract the major version (supports Java 11+)
-* Rejects EA builds and versions outside the configured range
-* If multiple valid JREs are found, picks the highest version
-* Exits with a clear error if none are valid
+* Extracts the major Java version (supports Java 8+):
+  - First tries to read from `release` file (e.g., `$JAVA_HOME/release`) which is much faster
+  - Falls back to executing `java -version` if the release file is not found or cannot be parsed
+  - The `release` file contains `JAVA_VERSION` (e.g., `"17"` or `"26"`) which is parsed directly
+* Validates versions against the configured min/max range
+* Uses the first valid Java found (stops searching once a compatible version is found)
+* Exits with a clear error message if no compatible Java is found
 
-### Input validation and behavior
+Note: Early Access (EA) builds are now supported and not automatically rejected.
 
 * Input must be a valid JAR with `META-INF/MANIFEST.MF` containing `Main-Class`
 * The tool validates the JAR and fails fast on missing `Main-Class` or invalid JAR

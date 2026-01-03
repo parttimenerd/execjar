@@ -164,7 +164,7 @@ public class CLIIntegrationTest {
                     output.append(line).append("\n");
                 }
             }
-
+            System.out.println("Process output:\n" + output);
             boolean finished = proc.waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
             assertTrue(finished, "Process should finish within 5 seconds");
             assertEquals(0, proc.exitValue(), "Executable should run successfully");
