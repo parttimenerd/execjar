@@ -48,7 +48,7 @@
             <plugin>
                 <groupId>me.bechberger</groupId>
                 <artifactId>execjar</artifactId>
-                <version>0.1.0</version>
+                <version>0.1.1</version>
                 <!-- The executions block binds the plugin to the build lifecycle
                      Without it, the plugin would never run automatically -->
                 <executions>
