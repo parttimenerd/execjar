@@ -23,7 +23,7 @@ import java.util.concurrent.Callable;
     name = "execjar",
     description = "Create executable files from runnable JAR files",
     mixinStandardHelpOptions = true,
-    version = "execjar 0.1.0",
+    version = "execjar 0.1.1",
     footer = {
         "",
         "Examples:",

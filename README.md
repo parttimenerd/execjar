@@ -58,7 +58,7 @@ The following is the relevant part of a `pom.xml` (see [example-project/pom.xml]
     <plugin>
       <groupId>me.bechberger</groupId>
       <artifactId>execjar</artifactId>
-      <version>0.1.0</version>
+      <version>0.1.1</version>
       <executions>
         <execution>
           <goals>
@@ -121,7 +121,7 @@ For a comprehensive example with Java properties, environment variables, and arg
 <plugin>
   <groupId>me.bechberger</groupId>
   <artifactId>execjar</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
   <executions>
     <execution>
       <goals>
@@ -314,7 +314,6 @@ For each candidate the launcher:
 * Uses the first valid Java found (stops searching once a compatible version is found)
 * Exits with a clear error message if no compatible Java is found
 
-Note: Early Access (EA) builds are now supported and not automatically rejected.
 
 * Input must be a valid JAR with `META-INF/MANIFEST.MF` containing `Main-Class`
 * The tool validates the JAR and fails fast on missing `Main-Class` or invalid JAR
