@@ -320,6 +320,19 @@ For each candidate the launcher:
 * Output is created next to the input JAR by default and is marked executable
 * The tool overwrites the output by default (unless input == output)
 
+Why not GraalVM native image?
+-----------------------------
+[GraalVM native image](https://www.graalvm.org/latest/reference-manual/native-image/) is a powerful technology for creating standalone executables with fast startup times, but it comes with some trade-offs:
+- Binaries are platform-specific, requiring separate builds for each target OS/architecture (and some platforms are not supported at all)
+- Binaries are far larger
+- Build times are over 10 times longer due to ahead-of-time compilation
+- Some Java features (like dynamic class loading, reflection, JNI) require additional configuration and may not work out-of-the-box
+
+This is why execjar is better suited for small tools like [jstall](https://github.com/parttimenerd/jstall) 
+where ease of use, small size, and cross-platform compatibility are more important than absolute performance.
+Regarding startup time, the execjar jstall starts in around 160ms vs 60ms for the native image version,
+which seems to be acceptable.
+
 Development
 -----------
 

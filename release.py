@@ -134,9 +134,9 @@ class VersionBumper:
             return
 
         content = self.example_pom.read_text()
-        # Update the execjar-maven-plugin version
+        # Update the execjar plugin version
         content = re.sub(
-            r'(<groupId>me\.bechberger</groupId>\s*<artifactId>execjar-maven-plugin</artifactId>\s*<version>)' + re.escape(old_version) + r'(</version>)',
+            r'(<groupId>me\.bechberger</groupId>\s*<artifactId>execjar</artifactId>\s*<version>)' + re.escape(old_version) + r'(</version>)',
             r'\g<1>' + new_version + r'\g<2>',
             content,
             flags=re.MULTILINE | re.DOTALL
